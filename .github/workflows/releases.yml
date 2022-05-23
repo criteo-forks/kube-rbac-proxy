@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  release:
+    types: [published, edited]
+#on:
+#  push
+
+jobs:
+  check-license:
+    runs-on: ubuntu-latest
+    name: Check license
+    steps:
+    - uses: actions/checkout@v2
+    - run: make check-license
+  build:
+    runs-on: ubuntu-latest
+    name: Build
+    steps:
+    - name: Set up golang
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.12
+      id: go
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+      with:
+        ref: ${{ github.ref }}
+    - name: Get dependencies
+      run: |
+        go get -v -t -d ./...
+        if [ -f Gopkg.toml ]; then
+            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+            dep ensure
+        fi
+    - name: Build
+      run: make build
+    - name: Upload
+      uses: fnkr/github-action-ghr@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GHR_PATH: _output/linux/amd64/kube-rbac-proxy
+        GHR_COMPRESS: gz
