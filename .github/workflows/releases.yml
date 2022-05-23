@@ -1,0 +1,32 @@
+name: Release
+
+on:
+  release:
+    types: [published, edited]
+
+env:
+  go-version: '1.19.1'
+  kind-version: 'v0.16.0'
+
+jobs:
+  check-license:
+    runs-on: ubuntu-latest
+    name: Check license
+    steps:
+    - uses: actions/checkout@v2
+    - run: make check-license
+  build:
+    runs-on: ubuntu-latest
+    name: Build
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-go@v2
+      with:
+        go-version: ${{ env.go-version }}
+    - run: make build
+    - name: Upload
+      uses: fnkr/github-action-ghr@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GHR_PATH: _output/kube-rbac-proxy
+        GHR_COMPRESS: gz
